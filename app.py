@@ -3,10 +3,17 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 
-db_url = os.getenv("DATABASE_URL")
+database_url= os.getenv("DATABASE_URL")
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+if database_url:
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///local.db"
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 db = SQLAlchemy(app)
 
 class Todo(db.Model):
@@ -59,5 +66,7 @@ def delete(sno):
     return redirect("/")
 
 if __name__ == "__main__":
-
+    with app.app_context():
+        db.create_all() 
     app.run(debug=True, port=8000)
+
